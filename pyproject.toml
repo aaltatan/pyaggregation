@@ -1,0 +1,74 @@
+[project]
+name = "pyaggregation"
+version = "0.1.0"
+description = "Summaries over collections in one pass: total(salary) & count(where=is_manager()), definable as JSON."
+readme = "README.md"
+authors = [
+    { name = "aaltatan", email = "a.altatan@gmail.com" }
+]
+license = "GPL-3.0-only"
+requires-python = ">=3.12"
+dependencies = [
+    "pyvocabulary>=0.1.0",
+]
+keywords = ["aggregation", "kpi", "report", "fold", "json", "dsl", "composition"]
+classifiers = [
+    "Development Status :: 1 - Planning",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
+
+[project.urls]
+Homepage = "https://github.com/aaltatan/pyaggregation"
+Repository = "https://github.com/aaltatan/pyaggregation"
+Issues = "https://github.com/aaltatan/pyaggregation/issues"
+
+[build-system]
+requires = ["uv_build>=0.11.32,<0.12.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "pytest-cov>=6.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests", "src"]
+pythonpath = ["."]
+addopts = ["--doctest-modules", "--strict-markers"]
+doctest_optionflags = ["ELLIPSIS", "NORMALIZE_WHITESPACE"]
+
+[tool.coverage.run]
+source = ["pyaggregation"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+exclude_also = ["@overload", "if TYPE_CHECKING:"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    "COM812",  # conflicts with the formatter
+    "CPY001",  # no per-file copyright headers
+    "D100", "D101", "D102", "D103", "D104", "D105", "D107", "D203", "D213",
+    "ANN401",  # JSON definitions genuinely are `Any`
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "PLR2004", "ANN", "ARG", "INP001", "E501"]
+
+[tool.uv.sources]
+# the sibling checkout in ~/dev until pyvocabulary is published on PyPI
+pyvocabulary = { path = "../pyvocabulary", editable = true }
