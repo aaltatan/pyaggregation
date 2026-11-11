@@ -7,7 +7,7 @@
 
 ## Phase 1 — Design (written only)
 - [x] `docs/DESIGN.md`: `Fold`, `Aggregate`, `Report`, built-ins (`total`, `count`, `average`, `share`, `minimum`, `maximum`), empty-input rules, `Decimal` handling, JSON shape
-- [ ] Author confirms a real project needs it (gate for Phase 2)
+- [x] Author confirms a real project needs it (gate for Phase 2): "Yes, build it", 2026-11-11
 
 ## Phase 2 — Core
 - [ ] Folds, `Report` with `&`, one-pass evaluation, `group_by`
