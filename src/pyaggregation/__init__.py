@@ -1,9 +1,96 @@
 """pyaggregation: Summaries over collections, computed in one pass.
 
-`total(salary, name="payroll") & count(name="managers", where=is_manager())`
+`total(salary, name="payroll") & count(name="managers", where=is_manager)`
 is a `Report`: several folds run together over any iterable, groupable by a key.
-
-Nothing is implemented yet; see PHASES.md for the plan.
 """
 
-__all__: list[str] = []
+from .aggregates import (
+    average,
+    collect,
+    count,
+    count_distinct,
+    every,
+    first,
+    join,
+    last,
+    maximum,
+    median,
+    minimum,
+    mode,
+    percentile,
+    product,
+    share,
+    some,
+    stdev,
+    total,
+    variance,
+)
+from .compilers import AggregateDict, Compiler, ReportCompiler, ReportDict
+from .exceptions import (
+    DuplicateResultNameError,
+    InvalidAggregateError,
+    InvalidGroupKeyError,
+    InvalidReportDefinitionError,
+    InvalidResultNameError,
+    PyaggregationError,
+)
+from .json_schema import (
+    CONDITION_SCHEMA_ID,
+    KEY_SCHEMA_ID,
+    VALUE_SCHEMA_ID,
+    get_report_json_schema,
+)
+from .report import (
+    Aggregate,
+    Condition,
+    Fold,
+    GroupedReport,
+    Report,
+    Value,
+    aggregate,
+    identity,
+)
+
+__all__ = [
+    "CONDITION_SCHEMA_ID",
+    "KEY_SCHEMA_ID",
+    "VALUE_SCHEMA_ID",
+    "Aggregate",
+    "AggregateDict",
+    "Compiler",
+    "Condition",
+    "DuplicateResultNameError",
+    "Fold",
+    "GroupedReport",
+    "InvalidAggregateError",
+    "InvalidGroupKeyError",
+    "InvalidReportDefinitionError",
+    "InvalidResultNameError",
+    "PyaggregationError",
+    "Report",
+    "ReportCompiler",
+    "ReportDict",
+    "Value",
+    "aggregate",
+    "average",
+    "collect",
+    "count",
+    "count_distinct",
+    "every",
+    "first",
+    "get_report_json_schema",
+    "identity",
+    "join",
+    "last",
+    "maximum",
+    "median",
+    "minimum",
+    "mode",
+    "percentile",
+    "product",
+    "share",
+    "some",
+    "stdev",
+    "total",
+    "variance",
+]

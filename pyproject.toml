@@ -9,7 +9,7 @@ authors = [
 license = "GPL-3.0-only"
 requires-python = ">=3.12"
 dependencies = [
-    "pyvocabulary>=0.1.3",
+    "pyvocabulary>=0.1.4",
 ]
 keywords = ["aggregation", "kpi", "report", "fold", "json", "dsl", "composition"]
 classifiers = [
@@ -35,6 +35,9 @@ build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
+    "jsonschema>=4.26.0",
+    "pyformula>=0.2.0",
+    "pyspecification>=4.1.0",
     "pytest>=9.1.1",
     "pytest-cov>=6.0",
 ]
@@ -69,3 +72,8 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S101", "PLR2004", "ANN", "ARG", "INP001", "E501"]
 
+
+[tool.pyright]
+venvPath = "."
+venv = ".venv"
+typeCheckingMode = "strict"

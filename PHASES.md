@@ -6,14 +6,14 @@
 - [x] Name chosen: `pyaggregate` is taken on PyPI, so the package is `pyaggregation`
 
 ## Phase 1 — Design (written only)
-- [ ] `docs/DESIGN.md`: `Fold`, `Aggregate`, `Report`, built-ins (`total`, `count`, `average`, `share`, `minimum`, `maximum`), empty-input rules, `Decimal` handling, JSON shape
-- [ ] Author confirms a real project needs it (gate for Phase 2)
+- [x] `docs/DESIGN.md`: `Fold`, `Aggregate`, `Report`, built-ins (`total`, `count`, `average`, `share`, `minimum`, `maximum`), empty-input rules, `Decimal` handling, JSON shape
+- [x] Author confirms a real project needs it (gate for Phase 2): "Yes, build it", 2026-11-11
 
 ## Phase 2 — Core
-- [ ] Folds, `Report` with `&`, one-pass evaluation, `group_by`
+- [x] Folds, `Report` with `&`, one-pass evaluation, `group_by`
 
 ## Phase 3 — Compiler and schema
-- [ ] Report compiler delegating `of`/`where` to injected compilers; JSON Schema
+- [x] Report compiler delegating `of`/`where` to injected compilers; JSON Schema
 
 ## Phase 4 — Release
 - [ ] GitHub repository, CI, PyPI
