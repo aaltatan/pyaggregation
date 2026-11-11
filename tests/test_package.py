@@ -2,5 +2,5 @@ import pyaggregation
 
 
 class TestPackage:
-    def test_package_imports(self):
-        assert pyaggregation.__all__ == []
+    def test_exports_are_importable(self):
+        assert all(hasattr(pyaggregation, name) for name in pyaggregation.__all__)

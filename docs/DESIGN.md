@@ -136,7 +136,8 @@ only when `key_schema` is given.
 
 `PyaggregationError` is the base. `InvalidResultNameError` (also a `ValueError`),
 `DuplicateResultNameError`, `InvalidAggregateError` (a non-callable `of`/`where`, a missing
-`where` on `share`) are raised when a report is built; `InvalidReportDefinitionError` by the
+`where` on `share`, a report with no aggregates) and `InvalidGroupKeyError` (a non-callable
+`group_by` key) are raised when a report is built; `InvalidReportDefinitionError` by the
 compiler. Messages say what is wrong and what is valid: "Result name 'payroll' is used more
 than once. Result names: payroll, managers".
 

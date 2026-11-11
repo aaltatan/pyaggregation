@@ -10,7 +10,7 @@
 - [x] Author confirms a real project needs it (gate for Phase 2): "Yes, build it", 2026-11-11
 
 ## Phase 2 — Core
-- [ ] Folds, `Report` with `&`, one-pass evaluation, `group_by`
+- [x] Folds, `Report` with `&`, one-pass evaluation, `group_by`
 
 ## Phase 3 — Compiler and schema
 - [ ] Report compiler delegating `of`/`where` to injected compilers; JSON Schema
