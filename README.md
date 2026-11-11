@@ -38,23 +38,15 @@ fixed, a SQL `GROUP BY` is faster. For one number from a list, `sum()` is fine.
 
 ## Installation
 
-pyaggregation is not on PyPI yet. Until it is, install it from a checkout:
-
 ```bash
-git clone https://github.com/aaltatan/pyaggregation
-```
-
-```bash
-uv add ./pyaggregation
+uv add pyaggregation
 ```
 
 or, with pip:
 
 ```bash
-pip install -e ./pyaggregation
+pip install pyaggregation
 ```
-
-Once it is published, this becomes `uv add pyaggregation` or `pip install pyaggregation`.
 
 It needs Python 3.12 or newer. The only runtime dependency is
 [pyvocabulary](https://github.com/aaltatan/pyvocabulary). For JSON definitions,
