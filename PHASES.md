@@ -6,7 +6,7 @@
 - [x] Name chosen: `pyaggregate` is taken on PyPI, so the package is `pyaggregation`
 
 ## Phase 1 — Design (written only)
-- [ ] `docs/DESIGN.md`: `Fold`, `Aggregate`, `Report`, built-ins (`total`, `count`, `average`, `share`, `minimum`, `maximum`), empty-input rules, `Decimal` handling, JSON shape
+- [x] `docs/DESIGN.md`: `Fold`, `Aggregate`, `Report`, built-ins (`total`, `count`, `average`, `share`, `minimum`, `maximum`), empty-input rules, `Decimal` handling, JSON shape
 - [ ] Author confirms a real project needs it (gate for Phase 2)
 
 ## Phase 2 — Core
