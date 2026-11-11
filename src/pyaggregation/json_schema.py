@@ -16,7 +16,13 @@ CONDITION_SCHEMA_ID = "urn:pyaggregation:condition"
 KEY_SCHEMA_ID = "urn:pyaggregation:key"
 
 _NAME_SCHEMA = {"type": "string", "pattern": "^[a-zA-Z_][a-zA-Z0-9_]*$"}
-_FIELD_REFS = {"of": {"$ref": VALUE_SCHEMA_ID}, "where": {"$ref": CONDITION_SCHEMA_ID}}
+_FIELD_SCHEMAS = {
+    "of": {"$ref": VALUE_SCHEMA_ID},
+    "where": {"$ref": CONDITION_SCHEMA_ID},
+    "at": {"type": "number", "minimum": 0, "maximum": 1},
+    "sample": {"type": "boolean"},
+    "separator": {"type": "string"},
+}
 
 
 def get_report_json_schema(
@@ -49,8 +55,7 @@ def get_report_json_schema(
 
     """
     defs: dict[str, Any] = {
-        fold: _aggregate_schema(fold, required, optional)
-        for fold, (required, optional) in FOLDS.items()
+        fold: _aggregate_schema(fold, spec.required, spec.optional) for fold, spec in FOLDS.items()
     }
     defs["value"] = {**value_schema, "$id": VALUE_SCHEMA_ID}
     defs["condition"] = {**condition_schema, "$id": CONDITION_SCHEMA_ID}
@@ -87,7 +92,7 @@ def _aggregate_schema(
         "properties": {
             "name": _NAME_SCHEMA,
             "fold": {"const": fold},
-            **{field: _FIELD_REFS[field] for field in fields},
+            **{field: _FIELD_SCHEMAS[field] for field in fields},
         },
         "required": ["name", "fold", *sorted(required)],
         "additionalProperties": False,

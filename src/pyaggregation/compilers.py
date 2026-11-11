@@ -6,27 +6,94 @@ pyaggregation does not know the expression languages inside `of`, `where` and
 """
 
 from collections.abc import Callable, Hashable, Mapping
-from typing import Any, NotRequired, Protocol, TypedDict, cast
+from typing import Any, NamedTuple, NotRequired, Protocol, TypedDict, cast
 
 from pyvocabulary import index_path, key_path, located, validate_name
 
-from .aggregates import average, count, maximum, minimum, share, total
+from .aggregates import (
+    average,
+    collect,
+    count,
+    count_distinct,
+    every,
+    first,
+    join,
+    last,
+    maximum,
+    median,
+    minimum,
+    mode,
+    percentile,
+    product,
+    share,
+    some,
+    stdev,
+    total,
+    variance,
+)
 from .exceptions import (
     DuplicateResultNameError,
+    InvalidAggregateError,
     InvalidReportDefinitionError,
     InvalidResultNameError,
 )
 from .report import Condition, GroupedReport, Report, Value
 
-# fold name -> (required fields, optional fields), besides `name` and `fold`
-FOLDS: Mapping[str, tuple[frozenset[str], frozenset[str]]] = {
-    "average": (frozenset({"of"}), frozenset({"where"})),
-    "count": (frozenset(), frozenset({"where"})),
-    "maximum": (frozenset({"of"}), frozenset({"where"})),
-    "minimum": (frozenset({"of"}), frozenset({"where"})),
-    "share": (frozenset({"where"}), frozenset({"of"})),
-    "total": (frozenset({"of"}), frozenset({"where"})),
+type Build = Callable[[str, Any, Any, dict[str, Any]], Report[Any]]
+
+
+class FoldSpec(NamedTuple):
+    """The JSON fields of one fold, besides `name` and `fold`, and how to build it."""
+
+    required: frozenset[str]
+    optional: frozenset[str]
+    build: Build
+
+
+def _of_first(build: Callable[..., Report[Any]]) -> Build:
+    return lambda name, of, where, options: build(of, name=name, where=where, **options)
+
+
+_OF = frozenset({"of"})
+_WHERE = frozenset({"where"})
+
+
+def _simple(build: Callable[..., Report[Any]]) -> FoldSpec:
+    return FoldSpec(_OF, _WHERE, _of_first(build))
+
+
+def _count(name: str, _of: Any, where: Any, _options: dict[str, Any]) -> Report[Any]:
+    return count(name=name, where=where)
+
+
+def _share(name: str, of: Any, where: Any, _options: dict[str, Any]) -> Report[Any]:
+    return share(name=name, where=where, of=of)
+
+
+FOLDS: Mapping[str, FoldSpec] = {
+    "average": _simple(average),
+    "collect": _simple(collect),
+    "count": FoldSpec(frozenset(), _WHERE, _count),
+    "count_distinct": _simple(count_distinct),
+    "every": _simple(every),
+    "first": _simple(first),
+    "join": FoldSpec(_OF, _WHERE | {"separator"}, _of_first(join)),
+    "last": _simple(last),
+    "maximum": _simple(maximum),
+    "median": _simple(median),
+    "minimum": _simple(minimum),
+    "mode": _simple(mode),
+    "percentile": FoldSpec(_OF | {"at"}, _WHERE, _of_first(percentile)),
+    "product": _simple(product),
+    "share": FoldSpec(_WHERE, _OF, _share),
+    "some": _simple(some),
+    "stdev": FoldSpec(_OF, _WHERE | {"sample"}, _of_first(stdev)),
+    "total": _simple(total),
+    "variance": FoldSpec(_OF, _WHERE | {"sample"}, _of_first(variance)),
 }
+
+# Plain JSON values passed to a built-in as they are; `of` and `where` are compiled.
+_OPTIONS = frozenset({"at", "sample", "separator"})
 
 _REPORT_KEYS = frozenset({"aggregates", "group_by"})
 
@@ -155,7 +222,7 @@ class ReportCompiler[T]:
             )
             raise InvalidReportDefinitionError(msg)
 
-        required, optional = FOLDS[fold]
+        required, optional, build = FOLDS[fold]
         _check_keys(
             item,
             required={"name", "fold", *required},
@@ -176,23 +243,13 @@ class ReportCompiler[T]:
             with located(key_path(path, "where"), Exception):
                 where = self._conditions.compile(item["where"])
 
-        return _build(fold, name, of, where, self._start)
+        options = {key: item[key] for key in _OPTIONS & item.keys()}
 
+        if fold == "total":
+            options["start"] = self._start
 
-def _build(fold: str, name: str, of: Any, where: Any, start: Any) -> Report[Any]:
-    match fold:
-        case "total":
-            return total(of, name=name, where=where, start=start)
-        case "count":
-            return count(name=name, where=where)
-        case "average":
-            return average(of, name=name, where=where)
-        case "share":
-            return share(name=name, where=where, of=of)
-        case "minimum":
-            return minimum(of, name=name, where=where)
-        case _:
-            return maximum(of, name=name, where=where)
+        with located(path, InvalidAggregateError):
+            return build(name, of, where, options)
 
 
 def _check_keys(

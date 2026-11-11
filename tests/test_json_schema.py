@@ -2,6 +2,7 @@ import pytest
 from jsonschema import Draft202012Validator
 
 from pyaggregation import get_report_json_schema
+from pyaggregation.compilers import FOLDS
 
 # Like pyspecification's schemas, this one uses its own `#/$defs` refs internally.
 CONDITION_SCHEMA = {
@@ -49,15 +50,39 @@ class TestReportJsonSchema:
             {"name": "t", "fold": "total"},
             {"name": "n", "fold": "count", "of": "salary"},
             {"name": "s", "fold": "share"},
-            {"name": "n", "fold": "median", "of": "salary"},
+            {"name": "n", "fold": "geometric_mean", "of": "salary"},
             {"name": "two words", "fold": "count"},
             {"fold": "count"},
             {"name": "n", "fold": "count", "where": "is_boss"},
             {"name": "t", "fold": "total", "of": "pay"},
+            {"name": "p", "fold": "percentile", "of": "salary"},
+            {"name": "p", "fold": "percentile", "of": "salary", "at": 1.5},
+            {"name": "m", "fold": "median", "of": "salary", "at": 0.5},
+            {"name": "v", "fold": "variance", "of": "salary", "sample": "no"},
+            {"name": "j", "fold": "join", "of": "salary", "separator": 0},
+            {"name": "t", "fold": "total", "of": "salary", "separator": ","},
         ],
     )
     def test_rejects_what_the_compiler_rejects(self, aggregate):
         assert not valid(report(aggregate))
+
+    def test_accepts_every_new_fold_with_its_options(self):
+        simple = ["product", "count_distinct", "median", "mode", "first", "last", "some", "every"]
+
+        assert valid(
+            report(
+                *({"name": fold, "fold": fold, "of": "salary"} for fold in simple),
+                {"name": "var", "fold": "variance", "of": "salary", "sample": False},
+                {"name": "sd", "fold": "stdev", "of": "salary", "where": "is_manager"},
+                {"name": "p", "fold": "percentile", "of": "salary", "at": 0.9},
+                {"name": "c", "fold": "collect", "of": "salary"},
+                {"name": "j", "fold": "join", "of": "salary", "separator": "; "},
+            ),
+            keys=False,
+        )
+
+    def test_every_compiler_fold_has_a_schema_variant(self):
+        assert set(FOLDS) <= set(validator().schema["$defs"])
 
     def test_rejects_an_empty_report(self):
         assert not valid(report())

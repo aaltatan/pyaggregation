@@ -4,7 +4,27 @@
 is a `Report`: several folds run together over any iterable, groupable by a key.
 """
 
-from .aggregates import average, count, maximum, minimum, share, total
+from .aggregates import (
+    average,
+    collect,
+    count,
+    count_distinct,
+    every,
+    first,
+    join,
+    last,
+    maximum,
+    median,
+    minimum,
+    mode,
+    percentile,
+    product,
+    share,
+    some,
+    stdev,
+    total,
+    variance,
+)
 from .compilers import AggregateDict, Compiler, ReportCompiler, ReportDict
 from .exceptions import (
     DuplicateResultNameError,
@@ -53,11 +73,24 @@ __all__ = [
     "Value",
     "aggregate",
     "average",
+    "collect",
     "count",
+    "count_distinct",
+    "every",
+    "first",
     "get_report_json_schema",
     "identity",
+    "join",
+    "last",
     "maximum",
+    "median",
     "minimum",
+    "mode",
+    "percentile",
+    "product",
     "share",
+    "some",
+    "stdev",
     "total",
+    "variance",
 ]

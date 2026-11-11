@@ -9,6 +9,7 @@ from pyspecification import Predicate, PredicateCompiler, RuleDoesNotExistError,
 from pyaggregation import (
     DuplicateResultNameError,
     GroupedReport,
+    InvalidAggregateError,
     InvalidReportDefinitionError,
     InvalidResultNameError,
     Report,
@@ -26,7 +27,7 @@ class Lookup:
         return self.entries[definition]
 
 
-VALUES = Lookup({"salary": salary, "name": lambda e: e.name})
+VALUES = Lookup({"salary": salary, "name": lambda e: e.name, "manager": is_manager})
 CONDITIONS = Lookup({"is_manager": is_manager})
 KEYS = Lookup({"department": department})
 
@@ -119,10 +120,12 @@ class TestShapeErrors:
                 r"Invalid report at \$.aggregates\[0\]: expected an object, received 'count'",
             ),
             (
-                report({"name": "n", "fold": "median"}),
+                report({"name": "n", "fold": "geometric_mean"}),
                 (
-                    r"Invalid report at \$.aggregates\[0\].fold: unknown fold 'median'. "
-                    r"Available folds: average, count, maximum, minimum, share, total"
+                    r"Invalid report at \$.aggregates\[0\].fold: unknown fold 'geometric_mean'. "
+                    r"Available folds: average, collect, count, count_distinct, every, first, join, last, "
+                    r"maximum, median, minimum, mode, percentile, product, share, some, stdev, total, "
+                    r"variance"
                 ),
             ),
             (
@@ -242,3 +245,83 @@ class TestWithPyformulaAndPyspecification:
             compiler.compile(json.loads(REAL))
 
         assert caught.value.__notes__[-1].startswith("at $.aggregates[2].where")
+
+
+class TestEveryFold:
+    def test_every_new_fold_compiles_and_runs(self, compiler, employees):
+        compiled = compiler.compile(
+            report(
+                {"name": "growth", "fold": "product", "of": "salary", "where": "is_manager"},
+                {"name": "names", "fold": "count_distinct", "of": "name"},
+                {"name": "var", "fold": "variance", "of": "salary", "sample": False},
+                {"name": "sd", "fold": "stdev", "of": "salary", "where": "is_manager"},
+                {"name": "mid", "fold": "median", "of": "salary"},
+                {"name": "p90", "fold": "percentile", "of": "salary", "at": 0.9},
+                {"name": "common", "fold": "mode", "of": "name"},
+                {"name": "a", "fold": "first", "of": "name"},
+                {"name": "z", "fold": "last", "of": "name"},
+                {"name": "any", "fold": "some", "of": "manager"},
+                {"name": "all", "fold": "every", "of": "manager"},
+                {"name": "list", "fold": "collect", "of": "name", "where": "is_manager"},
+                {"name": "csv", "fold": "join", "of": "name", "separator": ";"},
+            )
+        )
+
+        result = compiled(employees)
+
+        assert result["growth"] == Decimal("15000000.0000")
+
+        assert result["names"] == 4
+
+        assert result["var"] == Decimal("1062531.29296875")
+
+        assert result["sd"] == pytest.approx(Decimal("1414.2135623730950488"))
+
+        assert result["mid"] == Decimal("3750.25")
+
+        assert result["p90"] == Decimal("4850.150")
+
+        assert (result["common"], result["a"], result["z"]) == ("Alice", "Alice", "Dan")
+
+        assert (result["any"], result["all"]) == (True, False)
+
+        assert result["list"] == ["Alice", "Dan"]
+
+        assert result["csv"] == "Alice;Bob;Carol;Dan"
+
+    @pytest.mark.parametrize(
+        ("aggregate", "message"),
+        [
+            ({"name": "p", "fold": "percentile", "of": "salary"}, r"missing 'at'"),
+            ({"name": "m", "fold": "median", "of": "salary", "at": 0.5}, r"unknown 'at'"),
+            (
+                {"name": "t", "fold": "total", "of": "salary", "separator": ","},
+                r"unknown 'separator'",
+            ),
+        ],
+    )
+    def test_options_belong_to_their_fold(self, compiler, aggregate, message):
+        with pytest.raises(InvalidReportDefinitionError, match=message):
+            compiler.compile(report(aggregate))
+
+    @pytest.mark.parametrize(
+        "aggregate",
+        [
+            {"name": "p", "fold": "percentile", "of": "salary", "at": 2},
+            {"name": "v", "fold": "variance", "of": "salary", "sample": "no"},
+            {"name": "j", "fold": "join", "of": "name", "separator": 0},
+        ],
+    )
+    def test_bad_option_values_are_located(self, compiler, aggregate):
+        with pytest.raises(InvalidAggregateError) as caught:
+            compiler.compile(report(aggregate))
+
+        assert caught.value.__notes__ == ["at $.aggregates[0]"]
+
+    def test_json_decimals_keep_percentiles_exact(self, compiler, employees):
+        definition = json.loads(
+            '{"aggregates": [{"name": "p", "fold": "percentile", "of": "salary", "at": 0.9}]}',
+            parse_float=Decimal,
+        )
+
+        assert compiler.compile(definition)(employees) == {"p": Decimal("4850.150")}

@@ -69,6 +69,19 @@ own type and gets a note naming the aggregate (`in aggregate 'payroll'`), never 
 | `share` | `share(*, name, where, of=None)` | part / whole | `None` |
 | `minimum` | `minimum(of, /, *, name, where=None)` | smallest value | `None` |
 | `maximum` | `maximum(of, /, *, name, where=None)` | largest value | `None` |
+| `product` | `product(of, /, *, name, where=None, start=1)` | `start * product of values` | `start` |
+| `count_distinct` | `count_distinct(of, /, *, name, where=None)` | number of different values | `0` |
+| `variance` | `variance(of, /, *, name, where=None, sample=True)` | Welford, one pass | `None` |
+| `stdev` | `stdev(of, /, *, name, where=None, sample=True)` | square root of `variance` | `None` |
+| `median` | `median(of, /, *, name, where=None)` | middle value, or mean of the two | `None` |
+| `percentile` | `percentile(of, /, *, name, at, where=None)` | linear interpolation at `at` | `None` |
+| `mode` | `mode(of, /, *, name, where=None)` | most common value, first on ties | `None` |
+| `first` | `first(of, /, *, name, where=None)` | first value in input order | `None` |
+| `last` | `last(of, /, *, name, where=None)` | last value in input order | `None` |
+| `some` | `some(of, /, *, name, where=None)` | any value truthy | `None` |
+| `every` | `every(of, /, *, name, where=None)` | all values truthy | `None` |
+| `collect` | `collect(of, /, *, name, where=None)` | list of values | `[]` |
+| `join` | `join(of, /, *, name, where=None, separator=", ")` | values joined | `""` |
 
 - `name` is required and keyword-only: result keys are always explicit, never guessed from a
   function or lambda name.
@@ -76,16 +89,36 @@ own type and gets a note naming the aggregate (`in aggregate 'payroll'`), never 
   whole. Without `of` it is the share of items (`count where / count`); with `of` it is the
   share of a total (managers' share of payroll). `where` is required, since a share of
   everything is always 1. A zero whole gives `None` as well.
-- `aggregate(fold, /, *, name, of=None, where=None)` is the public way to add any other fold
-  (distinct count, first, last). The built-ins are written with it.
-- Not included, by choice: median and percentiles (need every value in memory), argmin/argmax
-  (return items, not values), `having`-style filters on groups, sorting groups (pyordering).
+- `aggregate(fold, /, *, name, of=None, where=None)` is the public way to add any other fold.
+  The built-ins are written with it.
+- Memory: most built-ins keep one running value. `count_distinct` and `mode` keep one entry
+  per distinct value; `median`, `percentile`, `collect` and `join` keep every value until the
+  input ends, so on a huge cursor prefer the constant-memory ones.
+- `variance` and `stdev` use Welford's method, not `sum of squares - square of sum`, which
+  loses all precision when values share a large offset (timestamps, account numbers). A
+  sample needs two values, a population one; fewer give `None`.
+- `percentile` is SQL's `PERCENTILE_CONT` (NumPy's default): `at` from 0 to 1, checked when
+  built; `bool`, `NaN` and out-of-range values are rejected. `median` is `at=0.5`. A float
+  `at` with `Decimal` values is read as the decimal it was written as (`0.9`, not
+  `0.90000000000000002`), so the result stays an exact `Decimal`.
+- `some` and `every` give `None` on no values, like SQL: `every` of nothing must not read as
+  "everything passed".
+- `mode` keeps first-seen order on ties (like `statistics.mode`); `count_distinct` follows
+  Python equality, so `1`, `1.0`, `Decimal(1)` and `True` are one value.
+- Growing accumulators (lists, sets, counters) are mutated in place. `initial` gives each run
+  a fresh one, and copying on every step would make a run quadratic.
+- Not included, by choice: argmin/argmax (return items, not values), `having`-style filters
+  on groups, sorting groups (pyordering).
 
 ## Empty input and `Decimal`
 
-- Sums of nothing are `start` (`0` by default); averages, shares, minimum and maximum of
-  nothing are `None`, never an exception or `NaN`. A report on an empty or fully filtered
-  input always returns a full dict.
+- Sums and collections of nothing are their empty value (`total` and `product` give
+  `start`, `count` and `count_distinct` give `0`, `collect` gives `[]`, `join` gives `""`).
+  Every other aggregate of nothing is `None`, never an exception or `NaN`. A report on an
+  empty or fully filtered input always returns a full dict.
+- `None` values are not skipped (unlike SQL's `NULL`): `total` and `minimum` of a `None`
+  raise `TypeError` with an `in aggregate` note, while `first`, `last`, `mode` and
+  `count_distinct` treat `None` as a value. Filter with `where` to skip them.
 - Money stays `Decimal`: values pass through unchanged, `Decimal + Decimal` stays exact, and
   `Decimal + float` raises `TypeError` instead of silently losing precision.
 - `total` needs `start=Decimal(0)` only so an empty total is `Decimal(0)` and not `0`.
@@ -116,9 +149,12 @@ parsers silently keep the last of two equal keys, and a duplicate must be an err
   one, `group_by` is rejected, so an API can offer ungrouped reports only.
 - `start` is set once per compiler (`start=Decimal(0)` in a money app), not per definition,
   because JSON has no `Decimal`.
-- `fold` names a built-in. `of` is required for `total`, `average`, `minimum`, `maximum`,
-  optional for `share`, rejected for `count`; `where` is required for `share`. A registry of
-  custom folds for JSON waits until a project needs one; Python's `aggregate` covers them.
+- `fold` names a built-in. `of` is required for every fold but `count` (where it is
+  rejected) and `share` (where it is optional); `where` is required for `share`. Literal
+  options sit next to them: `at` (required for `percentile`), `sample` (`variance`, `stdev`)
+  and `separator` (`join`); any other fold rejects them. Bad option values raise
+  `InvalidAggregateError` with an `at $.aggregates[i]` note. A registry of custom folds for
+  JSON waits until a project needs one; Python's `aggregate` covers them.
 - The compiler returns a `Report`, or a `GroupedReport` when `group_by` is present.
 - Shape errors raise `InvalidReportDefinitionError` with the path in the message. Errors from
   the injected compilers keep their type and get a note via `pyvocabulary.located`
