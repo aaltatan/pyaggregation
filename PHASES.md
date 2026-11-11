@@ -13,7 +13,7 @@
 - [x] Folds, `Report` with `&`, one-pass evaluation, `group_by`
 
 ## Phase 3 — Compiler and schema
-- [ ] Report compiler delegating `of`/`where` to injected compilers; JSON Schema
+- [x] Report compiler delegating `of`/`where` to injected compilers; JSON Schema
 
 ## Phase 4 — Release
 - [ ] GitHub repository, CI, PyPI

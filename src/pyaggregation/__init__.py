@@ -5,12 +5,20 @@ is a `Report`: several folds run together over any iterable, groupable by a key.
 """
 
 from .aggregates import average, count, maximum, minimum, share, total
+from .compilers import AggregateDict, Compiler, ReportCompiler, ReportDict
 from .exceptions import (
     DuplicateResultNameError,
     InvalidAggregateError,
     InvalidGroupKeyError,
+    InvalidReportDefinitionError,
     InvalidResultNameError,
     PyaggregationError,
+)
+from .json_schema import (
+    CONDITION_SCHEMA_ID,
+    KEY_SCHEMA_ID,
+    VALUE_SCHEMA_ID,
+    get_report_json_schema,
 )
 from .report import (
     Aggregate,
@@ -24,20 +32,29 @@ from .report import (
 )
 
 __all__ = [
+    "CONDITION_SCHEMA_ID",
+    "KEY_SCHEMA_ID",
+    "VALUE_SCHEMA_ID",
     "Aggregate",
+    "AggregateDict",
+    "Compiler",
     "Condition",
     "DuplicateResultNameError",
     "Fold",
     "GroupedReport",
     "InvalidAggregateError",
     "InvalidGroupKeyError",
+    "InvalidReportDefinitionError",
     "InvalidResultNameError",
     "PyaggregationError",
     "Report",
+    "ReportCompiler",
+    "ReportDict",
     "Value",
     "aggregate",
     "average",
     "count",
+    "get_report_json_schema",
     "identity",
     "maximum",
     "minimum",

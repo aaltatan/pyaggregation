@@ -45,3 +45,7 @@ class InvalidAggregateError(PyaggregationError, TypeError):
 
 class InvalidGroupKeyError(PyaggregationError, TypeError):
     """Raised when `group_by` is given a key that is not callable."""
+
+
+class InvalidReportDefinitionError(PyaggregationError, ValueError):
+    """Raised when a JSON report definition does not have the expected shape."""
