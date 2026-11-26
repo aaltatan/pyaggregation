@@ -1,5 +1,7 @@
 # pyaggregation
 
+**Documentation: <https://aaltatan.github.io/pyaggregation/>**
+
 Summaries over collections, computed in one pass. Composable with `&`, groupable by any key,
 and definable as JSON.
 
